@@ -12,9 +12,39 @@ def html_parser():
     return soup_html
 
 
+def get_categories():
+    main_html = html_parser()
+    content = main_html.find('ul', class_='nav-list')
+    get_links = content.findAll('a')
+    liens = []
+    categories_names = []
+    for link in get_links:
+      if 'http' not in link:
+         url_complete = '{}{}'.format(url_site, link['href'])
+         categorie_name = link.text.strip()
+         liens.append(url_complete)
+         categories_names.append(categorie_name)
+    return liens, categories_names
+
+def get_all_books_links():
+    categories_url, categories_names = get_categories()
+    for categories_url in categories_url:
+        links = get_links_categorie()
+
+def get_links_categorie(categorie_url):
+    main_html = html_parser()
+    content = main_html.find('ul', class_='nav-list')
+    get_links = content.findAll('a')
+    liens = []
+    for link in get_links:
+      if 'http' not in link:
+         url_complete = '{}{}'.format(url_site, link['href'])
+         liens.append(url_complete)
+    return liens
+
 
 """
-def get_infos_livre = {
+    infos_livre = {
     'product_page_url' : 'page_url'
     'universal_product_code(upc)' :
     'title':
@@ -28,7 +58,7 @@ def get_infos_livre = {
     }
 
 
-def code_produit():
+
 
 
 def get_page_url():
@@ -51,7 +81,7 @@ def get_categorie():
 """
 if __name__ == "__main__":
     # html_parser()
-    print(html_parser())
+    print(get_categories())
 
 #    print(categories)
 #    print("Dans le site Books_to_Scrape, il y a", len(categories), "Categories")
