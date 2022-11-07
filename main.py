@@ -3,31 +3,19 @@ from bs4 import BeautifulSoup as bs
 
 url_site = "http://books.toscrape.com/"
 url_livre = "http://books.toscrape.com/catalogue/love-is-a-mix-tape-music-1_711/index.html"
-# print(url_site)
 
 
 # Utilisation de requests/beautifulsoup4 pour parser le Html
 def html_parser():
-    page = requests.get(url_site)
-    soup = bs(page.content, 'html.parser')
-    # print(soup)
-    return soup
+    response = requests.get(url_site)
+    soup_html = bs(response.content, 'html.parser')
+    return soup_html
 
 
-if __name__ == "__main__":
-    html_parser()
-
-    # def get_infos_livre(url_livre):
-    # "Love is a mixtape" et de les exporter dans un fichier phase1.csv
-    # qui va se créer automatiquement C:\Users\olivier\PycharmProjects
-
-
-# url_page_web =
-# def get_url_page_web()
 
 """
-    infos_livre = {
-    'product_page_url' :
+def get_infos_livre = {
+    'product_page_url' : 'page_url'
     'universal_product_code(upc)' :
     'title':
     'price_including_tax' :
@@ -38,12 +26,40 @@ if __name__ == "__main__":
     'review_rating' :
     'image_url' :
     }
+
+
+def code_produit():
+
+
+def get_page_url():
+    # Récupère l'url de la page web
+    page_url = bs.find_all("p", class_="star-rating One")[3]
+    a = td.find(a)
+    link = a['href']
+    return page_url
+
+
+def get_categorie():
+    categories = []
+    categories_bs = bs.find('ul', class_="breadcrumb")
+
+
+    for categorie in categories_bs:
+        categories_bs.append(categorie.string)
+    return categories
+# On affiche tous les categories de livres
 """
+if __name__ == "__main__":
+    # html_parser()
+    print(html_parser())
+
+#    print(categories)
+#    print("Dans le site Books_to_Scrape, il y a", len(categories), "Categories")
 
 
-# def get_page_url():
-# Récupère l'url de la page web
-#    page_url =
-#    return
+    # def get_infos_livre(url_livre):
+    # "Love is a mixtape" et de les exporter dans un fichier phase1.csv
+    # qui va se créer automatiquement C:\Users\olivier\PycharmProjects
 
-# def get_code_produit():
+# url_page_web =
+# def get_url_page_web()
