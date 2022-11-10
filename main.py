@@ -97,39 +97,23 @@ def get_categorie():
 
 
 # content_inner > article > div.row > div.col-sm-6.product_main > p.star-rating.One
-def get_nb_etoiles(): # A finir !!!
+def get_nb_etoiles(): # Fini, Affiche le nombre d'étoiles
+    # Récupère l'url de la page web
     main_html = html_parser_livre()
-    table_p = main_html.find('div', class_='col-sm-6 product_main')
-    get_all_p = table_p.findAll('p')
-    #print(get_all_p)
-    texte = []
-    texte_p = []
-    for tex in get_all_p:
-        texte = tex
-        texte_p.append(tex)
-    texte_p = list(texte_p)[2]
-    ets = []
-    etss = []
-    for et in texte_p:
-        #ets = et.text
-        #etss.append(et)
-        if 'star-rating One' in et:
-            print("1 étoile sur 5")
-        elif 'star-rating Two' in et:
-            print("2 étoiles sur 5")
-        elif 'star-rating Three' in et:
-            print("3 étoiles sur 5")
-        elif 'star-rating Four' in et:
-            print("4 étoiles sur 5")
-        elif 'star-rating Five' in et:
-            print("2 étoiles sur 5")
-    else:
-        print("Il n'y a pas de note")
-    return texte_p
-        
+    page_url = main_html.find_all('p', {"class": "star-rating One"})
+    p = []
+    tablep = []
+    tablesp = []
+    for p in page_url:
+        tablep = p
+        tablesp.append(tablep)
+    return p.get("class")[1]
+    
+    
     # Bloqué 1h à cause de l'indentation et list()[]
     #nb_etoiles = list(categos)[2]
     #return nb_etoiles
+
 
 def get_categories():
     main_html = html_parser_site()
@@ -165,21 +149,6 @@ def get_links_categorie(categorie_url):
          url_complete = '{}{}'.format(url_site, link['href'])
          liens.append(url_complete)
     return liens
-
-
-def get_page(): # A finir... methode test pour parse star-rating One ...
-    # Récupère l'url de la page web
-    main_html = html_parser_livre()
-    # page_url = main_html.find_all("p", class_="star-rating One")
-    # table = main_html.findAll('div', attrs={"class": "star-rating One"})
-    page_url = main_html.p['class']
-    tablep = []
-    tablesp = []
-    for p in page_url:
-        tablep = p
-    tablesp.append(tablep)
-    print(tablesp)
-    return tablep
 
 
 """
@@ -220,7 +189,7 @@ def get_categorie():
 """
 if __name__ == "__main__":
     # html_parser_site()
-    print(get_page())
+    print(get_nb_etoiles())
 
 #    print(categories)
 #    print("Dans le site Books_to_Scrape, il y a", len(categories), "Categories")
