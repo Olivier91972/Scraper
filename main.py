@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup as bs
+import csv
 
 url_site = "http://books.toscrape.com/"
 url_livre = "http://books.toscrape.com/catalogue/love-is-a-mix-tape-music-1_711/index.html"
@@ -59,6 +60,13 @@ def get_stock():
     return infos['Availability']
 
 
+def get_description_produit():
+    main_html = html_parser_livre()
+    content_p = main_html.find('article', class_='product_page')
+    content_p = content_p.find_all('p')[3].text
+    return content_p
+
+
 def get_page_url():
     main_html = html_parser_site()
     content = main_html.find('a')
@@ -115,6 +123,13 @@ def get_nb_etoiles(): # Fini, Affiche le nombre d'étoiles
     #return nb_etoiles
 
 
+def get_image_url():
+    main_html = html_parser_livre()
+    image_img = main_html.find_all('img')[0]
+    image_src = image_img.get("src").replace("../../", "")
+    image_url_cplt = url_site + image_src
+    return image_url_cplt
+
 def get_categories():
     main_html = html_parser_site()
     content = main_html.find('ul', class_='nav-list')
@@ -151,47 +166,52 @@ def get_links_categorie(categorie_url):
     return liens
 
 
-"""
-    infos_livre = {
-    'product_page_url' : 'get_product_url()'
-    'universal_product_code(upc)' :
-    'title':
-    'price_including_tax' :
-    'price_excluding_tax' :
-    'number_available' :
-    'product_description' :
-    'category' :
-    'review_rating' :
-    'image_url' :
-    }
+content = get_produit_url()
+infos = get_produit_code_prix_stock()
+titre = get_titre()
+content_p = get_description_produit()
+catego = get_categorie()
+p = get_nb_etoiles()
+image_url_cplt = get_image_url()
+infos_livre = {
+    'product_page_url': content,
+    'universal_product_code(upc)': infos['UPC'],
+    'title': titre,
+    'price_including_tax': infos['Price (incl. tax)'],
+    'price_excluding_tax': infos['Price (excl. tax)'],
+    'number_available': infos['Availability'],  # list replace "(" pour laisser uniquement "14"
+    'product_description': content_p,
+    'category': catego,
+    'review_rating': p,  # mettre 1 au lieu de One
+    'image_url': image_url_cplt
+}
 
 
 
+# On prend tout le texte dans un fichier csv
+# Créer une liste pour les en-têtes
+en_tete = ["product_page_url", "universal_ product_code (upc)", "title", "price_including_tax",
+           "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
+# Créer un nouveau fichier pour écrire dans le fichier appelé « phase1.csv »
+with open('phase1.csv', 'w') as fichier_csv:
+    # Créer un objet writer (écriture) avec ce fichier
+    writer = csv.writer(fichier_csv, delimiter=',')
+    writer.writerow(en_tete)
+    # Parcourir les infos du livre - zip permet d'itérer sur deux listes ou plus à la fois
+    for infos_livre in zip(content, infos['UPC'], titre, infos['Price (incl. tax)'], infos['Price (excl. tax)'], 
+                           infos['Availability'], content_p, catego, p, image_url_cplt):
+        # Créer une nouvelle ligne avec les infos à ce moment de la boucle
+                ligne = [content, infos['UPC'], titre, infos['Price (incl. tax)'], infos['Price (excl. tax)'],
+                         infos['Availability'], content_p, catego, p, image_url_cplt]
+                
+    writer.writerow(ligne)
 
 
-def get_page_url():
-    # Récupère l'url de la page web
-    page_url = bs.find_all("p", class_="star-rating One")[3]
-    a = td.find(a)
-    link = a['href']
-    return page_url
 
-
-def get_categorie():
-    categories = []
-    categories_bs = bs.find('ul', class_="breadcrumb")
-
-
-    for categorie in categories_bs:
-        categories_bs.append(categorie.string)
-    return categories
-# On affiche tous les categories de livres
-"""
 if __name__ == "__main__":
     # html_parser_site()
-    print(get_nb_etoiles())
-
-#    print(categories)
+    #print(get_image_url())
+    print(ligne)
 #    print("Dans le site Books_to_Scrape, il y a", len(categories), "Categories")
 
 
