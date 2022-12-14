@@ -30,4 +30,26 @@ Depuis votre terminal ou Git Bash utilisez la commande : \
 sinon vous pouvez le télécharger sur https://www.python.org/downloads/ \
 `git --version` : pour vérifier la version de git installée sur votre système \
 sinon vous pouvez la télécharger sur https://git-scm.com/downloads/ \
-***Rappel : les commandes ci-dessus ne sont valables qu'avec le module venv*** \
+***Rappel : les commandes ci-dessus ne sont valables qu'avec le module venv*** 
+
+Dupplication du dépôt distant en local depuis le terminal ou l'invite de commande : \
+`git clone https://github.com/Olivier91972/Scraper.git` 
+
+Création de l'environnement virtuel "venv" : \
+utilisez la commande `python -m venv <nom environnement>` dans ce cas, \
+"env" sera par convention, le nom environnement, soit `python -m venv env` \
+
+Activation de l'environnement virtuel "env" : \
+exécutez `env/Scripts/activate.bat` \
+(si vous êtes sous Unix, la commande sera source `env/bin/activate`)
+
+Installation des packages avec pip : \
+`pip install -r requirements.txt`
+
+Lancer le script : \
+`python main.py` sous Unix \
+`py main.py` sous Windows 
+
+***Rappel : Le script ne doit retourner aucune erreur à la fin de son éxécution. \
+La bonne éxécution du script, ainsi que l'intégrité des données récupérées, \
+dépendront de la stabilité de votre connexion internet.*** 
