@@ -3,90 +3,326 @@ from bs4 import BeautifulSoup as bs
 import csv
 import pandas as pd
 import time
+import re
+import os
+import urllib.request
 
+global e
 
 url_site = "http://books.toscrape.com/"
 url_livre = "http://books.toscrape.com/catalogue/love-is-a-mix-tape-music-1_711/index.html"
 url_categorie = "http://books.toscrape.com/catalogue/category/books/childrens_11/index.html"
 
 
-# Utilisation de requests/beautifulsoup4 pour parser le Html
 def html_parser(url):
+    # Permet d'obtenir la soupe de bs
     response = requests.get(url)
     soup = bs(response.content, 'html.parser')
     return soup
 
 
+def scraper_livre_phase1(url):
+    # Export csv
+    with open("livre_ph1.csv", 'w', encoding='utf8', newline='') as fopen:
+        writer = csv.writer(fopen, delimiter=',')
+        en_tete = ["product_page_url", "universal_product_code", "title", "price_including_tax",
+                   "price_excluding_tax", "number_available", "product_description", "category", "review_rating",
+                   "image_url"]
+        writer.writerow(en_tete)
 
-def get_produit_url():
-    content = url_livre
-    return content
+        source_url = url_site
+        soup = html_parser(url)
+        li = soup.find("article", class_="product_pod")
+        titre = soup.find("div", class_="col-sm-6 product_main")
+        titre_s = titre.find("h1").text.encode("ascii", "ignore").decode("ascii")
+        print(f'Livre : {titre_s:.^60}')
+        info_url = url
+        print(f'product_page_url : {info_url}')
+        infos = get_produit_code_prix_stock(url)
+        code_upc = infos[0]
+        print(f'universal_ product_code (upc) : {code_upc}')
+        print(f'title : {titre_s}')
+        prix_ttc = infos[1]
+        print(f'price_including_tax : {prix_ttc}')
+        prix_ht = infos[2]
+        print(f'price_excluding_tax : {prix_ht}')
+        stock = infos[3]
+        print(f'number_available : {stock}')
+        descr_prod = get_description_produit(url)
+        print(f'product_description : {descr_prod}')
+        categorie = get_categorie(url)
+        print(f'category : {categorie}')
+        nb_etoiles = li.find("p", class_="star-rating")["class"][1]
+        print(f'review_rating : {nb_etoiles}')
+        couv_url_b = soup.find("div", class_="item active")
+        couv_url = source_url + couv_url_b.img["src"].replace("../../", "")
+        print(f'image_url : {couv_url}')
+        time.sleep(1)
+        text = "Terminé !"
+        print(f' {text:.>60} \n')
+
+        livre = {"product_page_url": info_url,
+                 "universal_product_code": code_upc,
+                 "title": titre_s,
+                 "price_including_tax": prix_ttc,
+                 "price_excluding_tax": prix_ht,
+                 "number_available": stock,
+                 "product_description": descr_prod,
+                 "category": categorie,
+                 "review_rating": nb_etoiles,
+                 "image_url": couv_url}
+        info = [info_url, code_upc, titre_s, prix_ttc, prix_ht,
+                stock, descr_prod, categorie, nb_etoiles, couv_url]
+        writer.writerow(info)
+    return livre
 
 
-# On récupère un dictionnaire des infos code prix et stock
-def get_produit_code_prix_stock():
-    main_html = html_parser(url_livre)
+def naviguer_et_scraper_phase2():
+    page_number = 1
+    continue_categorie_scraping, liens_cat = get_links_categorie(url_categorie, page_number=page_number)
+    start_time = time.perf_counter()
+
+    with open("livres_ph2.csv", 'w', encoding='utf8', newline='') as fopen:
+        writer = csv.writer(fopen, delimiter=',')
+        en_tete = ["product_page_url", "universal_product_code", "title", "price_including_tax",
+                   "price_excluding_tax", "number_available", "product_description", "category", "review_rating",
+                   "image_url"]
+        writer.writerow(en_tete)
+
+        for lien in liens_cat:
+            source_url = url_site
+            html_text = requests.get(lien).text
+            soup = bs(html_text, "html.parser")
+            titre = soup.find("div", class_="col-sm-6 product_main")
+            titre_s = titre.find("h1").text.encode("ascii", "ignore").decode("ascii")
+            print(titre_s)
+            print(f'Livre : {titre_s:.^60}')
+            info_url = lien
+            print(f'product_page_url : {info_url}')
+            infos = get_produit_code_prix_stock(lien)
+            code_upc = infos[0]
+            print(f'universal_ product_code (upc) : {code_upc}')
+            print(f'title : {titre_s}')
+            prix_ttc = infos[1]
+            print(f'price_including_tax : {prix_ttc}')
+            prix_ht = infos[2]
+            print(f'price_excluding_tax : {prix_ht}')
+            stock = infos[3]
+            print(f'number_available : {stock}')
+            descr_prod = get_description_produit(lien)
+            print(f'product_description : {descr_prod}')
+            categorie = get_categorie(lien)
+            print(f'category : {categorie}')
+            nb_etoiles = soup.find("p", class_="star-rating")["class"][1]
+            print(f'review_rating : {nb_etoiles}')
+            couv_url_b = soup.find("div", class_="item active")
+            couv_url = source_url + couv_url_b.img["src"].replace("../../", "")
+            print(f'image_url : {couv_url}')
+            time.sleep(1)
+            text = "Livre suivant !"
+            print(f' {text:.>60} \n')
+
+            livres = {"product_page_url": info_url,
+                      "universal_product_code": code_upc,
+                      "title": titre_s,
+                      "price_including_tax": prix_ttc,
+                      "price_excluding_tax": prix_ht,
+                      "number_available": stock,
+                      "product_description": descr_prod,
+                      "category": categorie,
+                      "review_rating": nb_etoiles,
+                      "image_url": couv_url}
+            info = [info_url, code_upc, titre_s, prix_ttc, prix_ht,
+                    stock, descr_prod, categorie, nb_etoiles, couv_url]
+            writer.writerow(info)
+
+    elapsed_time = time.perf_counter() - start_time
+    elapsed_time_min = int(elapsed_time / 60)
+    print(f"The whole process took {elapsed_time_min} minutes "
+          f"and {round(elapsed_time - (60 * elapsed_time_min), 2)} seconds.")
+    return livres
+
+
+def naviguer_et_scraper_phase3():
+    lien = []
+    page_number = 1
+    start_time = time.perf_counter()
+
+    get_links_categories(url_site, page_number=1)
+    for lien in liens_all:
+        source_url = url_site
+        html_text = requests.get(lien).text
+        soup = bs(html_text, "html.parser")
+        titre = soup.find("div", class_="col-sm-6 product_main")
+        titre_s = titre.find("h1").text.encode("ascii", "ignore").decode("ascii")
+        print(titre_s)
+        print(f'Livre : {titre_s:.^60}')
+        info_url = lien
+        print(f'product_page_url : {info_url}')
+        infos = get_produit_code_prix_stock(lien)
+        code_upc = infos[0]
+        print(f'universal_ product_code (upc) : {code_upc}')
+        print(f'title : {titre_s}')
+        prix_ttc = infos[1]
+        print(f'price_including_tax : {prix_ttc}')
+        prix_ht = infos[2]
+        print(f'price_excluding_tax : {prix_ht}')
+        stock = infos[3]
+        print(f'number_available : {stock}')
+        descr_prod = get_description_produit(lien)
+        print(f'product_description : {descr_prod}')
+        categorie = get_categorie(lien)
+        print(f'category : {categorie}')
+        nb_etoiles = soup.find("p", class_="star-rating")["class"][1]
+        print(f'review_rating : {nb_etoiles}')
+        couv_url_b = soup.find("div", class_="item active")
+        couv_url = source_url + couv_url_b.img["src"].replace("../../", "")
+        print(f'image_url : {couv_url}')
+        time.sleep(1)
+        text = "Livre suivant !"
+        print(f' {text:.>60} \n')
+
+    categories_names = get_categories_names(url_site)
+    get_data_to_csv(categories_names)
+
+    elapsed_time = time.perf_counter() - start_time
+    elapsed_time_min = int(elapsed_time / 60)
+    print(f"The whole process took {elapsed_time_min} minutes "
+          f"and {round(elapsed_time - (60 * elapsed_time_min), 2)} seconds.")
+
+
+liens_cat = []
+liens_all = []
+
+
+def get_links_categorie(categorie_url, page_number):
+    url_reduite = categorie_url[:-10] + "page-{}.html"
+    form_url = url_reduite.format(str(page_number))
+    r = requests.get(form_url)
+
+    if r.status_code == 200:
+        html_text = requests.get(form_url).text
+        soup = bs(html_text, "html.parser")
+        content = soup.find('ol', class_='row')
+        liens = []
+        print(f"check bouton next - {form_url}")
+        get_links = content.findAll('a')
+        url_complete = {}
+
+        for link in get_links:
+            if 'http' not in link:
+                url_complete = '{}{}'.format(url_site + "catalogue/", link['href'].replace("../../../", ""))
+            liens.append(url_complete)
+        # gestion des doublons dans la liste
+        liens_cat = list(set(liens))
+        print(liens_cat)
+        # Ajout des liens obtenus dans un conteneur global
+        liens_all.extend(liens_cat)
+        print(liens_all)
+        print(len(liens_all))
+
+        nb_liens_page = len(liens_cat)
+        print(nb_liens_page)
+        time.sleep(1)
+
+        if nb_liens_page >= 20:  # ou détection du bouton next
+            print("on doit aller à la page suivante !")
+            page_number += 1
+            get_links_categorie(categorie_url, page_number)
+
+        else:
+            return False
+
+    else:
+        return False
+
+    return True, liens_all
+
+
+def get_links_categories(categorie_url, page_number):
+    liens_c = get_categories(categorie_url)
+    for url_reduite in liens_c:
+        categorie_url = url_reduite
+        url_reduite = categorie_url[:-10] + "page-{}.html"
+        form_url = url_reduite.format(str(page_number))
+        r = requests.get(form_url)
+        print(r)
+
+        if r.status_code == 200:
+            html_text = requests.get(form_url).text
+            soup = bs(html_text, "html.parser")
+            content = soup.find('ol', class_='row')
+            liens = []
+            print(f"Lien en cours... - {form_url}")
+            get_links = content.findAll('a')
+            url_complete = {}
+
+            for link in get_links:
+                if 'http' not in link:
+                    url_complete = '{}{}'.format(url_site + "catalogue/", link['href'].replace("../../../", ""))
+                liens.append(url_complete)
+
+            liens_cat = list(set(liens))
+            liens_all.extend(liens_cat)
+            nb_liens_page = len(liens_cat)
+            print(nb_liens_page)
+            time.sleep(1)
+
+            if nb_liens_page >= 20:
+                print("page suivante car nb liens max !")
+                page_number += 1
+
+                get_links_categorie(categorie_url, page_number)
+            else:
+                page_number = 1
+                pass
+
+        elif r.status_code == 404:
+            print("On récupére les liens de la page index")
+            form_url = form_url[:-11]
+            html_text = requests.get(form_url).text
+            soup = bs(html_text, "html.parser")
+            content = soup.find('ol', class_='row')
+            liens = []
+            print(f"Lien en cours... - {form_url}")
+            get_links = content.findAll('a')
+            url_complete = {}
+            for link in get_links:
+                if 'http' not in link:
+                    url_complete = '{}{}'.format(url_site + "catalogue/", link['href'].replace("../../../", ""))
+                liens.append(url_complete)
+
+            liens_cat = list(set(liens))
+            liens_all.extend(liens_cat)
+            print(len(liens_all))
+            print("Lien suivant")
+        else:
+            return False
+        page_number = 1
+        print("on continue !")
+        time.sleep(1)
+    return liens_all
+
+
+def get_produit_code_prix_stock(url):
+    main_html = html_parser(url)
     content = main_html.find('table', class_='table table-striped')
     code_upc = content.findAll('tr')
     infos = {}
     for ifs in code_upc:
         infos[ifs.findChildren()[0].text] = ifs.findChildren()[1].text
-    return infos
+    return infos['UPC'], infos['Price (excl. tax)'], infos['Price (incl. tax)'], infos['Availability']
 
 
-# On créer un objet infos avec la methode pour selectionner la clé
-def get_code_produit():
-    infos = get_produit_code_prix_stock()
-    return infos['UPC']
-
-
-def get_prix_ht():
-    infos = get_produit_code_prix_stock()
-    return infos['Price (excl. tax)']
-
-
-def get_prix_ttc():
-    infos = get_produit_code_prix_stock()
-    return infos['Price (incl. tax)']
-
-
-def get_stock():
-    infos = get_produit_code_prix_stock()
-    return infos['Availability']
-
-
-def get_description_produit():
-    main_html = html_parser(url_livre)
+def get_description_produit(url):
+    main_html = html_parser(url)
     content_p = main_html.find('article', class_='product_page')
     content_p = content_p.find_all('p')[3].text
     return content_p
 
 
-def get_page_url():
-    main_html = html_parser_site()
-    content = main_html.find('a')
-    link = '{}{}'.format(url_site, content['href'])
-    return link
-
-
-"""
-    books_link = get_all_books_url(data)
-         for book_url in  books_link:
-            print('data collection : ', book_url)
-            try:
-               data = get_book_info(book_url)
-"""
-
-
-def get_titre():
-    main_html = html_parser(url_livre)
-    titre = main_html.find('title').text
-    titre = titre.strip()
-    return titre
-
-
-def get_categorie():
-    main_html = html_parser(url_livre)
+def get_categorie(url):
+    main_html = html_parser(url)
     categorie = main_html.find('ul', class_='breadcrumb')
     get_links = categorie.findAll('a')
     catego = []
@@ -94,297 +330,83 @@ def get_categorie():
     for cat in get_links:
         catego = cat.text
         categos.append(catego)
-    # Bloqué 1h à cause de l'indentation et list()[]
+
     catego = list(categos)[2]
     return catego
 
 
-"""
-def get_categorie_2():
-    main_html = html_parser_site()
-    content = main_html.find('ul', class_='nav-list')
-    get_links = content.findAll('a')
-    categories_names_2 = []
-    for link in get_links:
-        if 'http' not in link:
-            # url_complete = '{}{}'.format(url_site, link['href'])
-            categorie_name = link.text.strip()
-            categories_names_2.append(categorie_name)
-            
-    categories_names_2 = categories_names_2[10]
-    return categories_names_2
-"""
-
-
-# content_inner > article > div.row > div.col-sm-6.product_main > p.star-rating.One
-def get_nb_etoiles(): # Fini, Affiche le nombre d'étoiles
-    # Récupère l'url de la page web
-    main_html = html_parser(url_livre)
-    page_url = main_html.find_all('p', {"class": "star-rating One"})
-    p = []
-    tablep = []
-    tablesp = []
-    for p in page_url:
-        tablep = p
-        tablesp.append(tablep)
-    return p.get("class")[1]
-    
-    
-    # Bloqué 1h à cause de l'indentation et list()[]
-    #nb_etoiles = list(categos)[2]
-    #return nb_etoiles
-
-
-def get_image_url():
-    main_html = html_parser(url_livre)
-    image_img = main_html.find_all('img')[0]
-    image_src = image_img.get("src").replace("../../", "")
-    image_url_cplt = url_site + image_src
-    return image_url_cplt
-
-
-#def get_categories_url(): # PAGINATION ET FICHIER CSV A NETTOYER !!!!
-    # Pagination
-url = "http://books.toscrape.com/catalogue/category/books/childrens_11/index.html"
-
-
-def get_soup(url):
-    """Takes a URL and returns a BeautifulSoup() instance representing the HTML of the page."""
-    
-    response = requests.get(url)
-    html = response.text
-    soup = bs(html, "html.parser")
-
-    return soup
-
-def get_soup_test(url):
-    response = requests.get(url)
-    html = response.text
-    soup = bs(html, "html.parser")
-    return soup
-
-def get_info_livres_test():
-    soup = get_soup(url)
-    #print(soup)
-    conten = soup.find('article', class_="product_pod")
-    conte = conten.article.get('href')
-    lie = []
-    lien = []
-    #print(a['href'])
-    for lie in conten:
-        lien.append(lie)
-        #get_produit_url_test(url)
-    return lien
-    
-    
-
-def get_produit_url_test(url):
-    content = url
-    return content
-
-# Vu sur Stack Overflow à revoir avec Guillaume !!!
-def scrape_page(url):
-    """Takes a page and append link of the books that are on the page to global list"""
-    BASE_URL = 'http://books.toscrape.com/catalogue/'
-
-    soup = get_soup(url)
-    for x in soup.find_all("article", class_="product_pod"):
-        url = x.div.a.get('href')
-        link = BASE_URL + url
-        if x not in book_url:
-            book_url.append(link)
-    if soup.select_one('li.next a[href]'):
-        #print(soup.select_one('li.next a[href]'))
-        nextpage = BASE_URL + soup.select_one('li.next a[href]')['href']
-        time.sleep(1)
-    else:
-        nextpage = None
-
-    return nextpage
-
-
-def scrape_all_pages(url):
-    """Scrapes all pages, returning a list of book links."""
-    while True:
-        if url:
-            print(url)
-            url = scrape_page(url)
-        else:
-            break
-    return book_url
-
-book_url = []
-
-#scrape_all_pages('https://books.toscrape.com/catalogue/category/books/childrens_11/')
-
-
-"""
-    cat_url_liste = "http://books.toscrape.com/catalogue/category/books/childrens_11/page-"# 2.html
-
-    url_liste = []
-    
-    for base_url in cat_url_liste:
-        verif_page = True
-        
-        while verif_page is True:   
-            i = 1
-            url_p = cat_url_liste + str(i) + ".html"
-            print(url_p)
-            soup_p = html_parser_site()
-            derniere_page = soup_p.find("li", class_="next")
-            # derniere_page = soup_p.find("center")
-            # derniere_p = derniere_page.find_all("li",)
-            # print(derniere_page)
-            if derniere_page:
-                print("Pages chargées !")
-                verif_page = False
-
-            else:
-                url_liste.append(url_p)
-                i = i + 1
-                print(url_liste)
-                return verif_page
-"""
-
-
-   
-
-
-"""
-    main_html = html_parser_categorie()
-    #cat_h3 = main)_html.find_all(a['href'])
-    cat_href = main_html.find_all("div", {"class": "image_container"})
-    #cat_href = main_html.find("div", {"class": "image_container"})
-    #cat_a = cat_href.findAll('a')
-    #inner = cat_a.findChildren()
-    #cat_href = main_html.findAll('ol', class_='row')
-    liens_fin_url = []
-    for a in cat_href:
-        # On récupère les liens des livres en utilisant find_all de la manière suivante 
-        # pour trouver chaque 'a' élément qui a un 'href' attribut, et imprimer chacun
-        liens_href = a.findAll('a', href=True)
-        for link in liens_href:
-            liens_fin_url.append(url_site + "catalogue/" + link['href'].replace("../../../", "") + "\n")
-    # print(liens_fin_url)
-    liens_fin_url_cplt = liens_fin_url
-    return liens_fin_url_cplt
-
-
-cat_url = get_categorie()
-liens_fin_url_cplt = get_categories_url()
-categories_names_2 = get_categorie_2()
-infos_liens_cat = {
-    'Catégorie': categories_names_2,
-    'Url page produit': cat_url
-    
-}
-
-
-# def save_page_url_cat():
-# On prend tout le texte dans un fichier csv
-# Créer une liste pour les en-têtes
-en_tete_2 = ["Catégorie", "Url page produit"]
-# Créer un nouveau fichier pour écrire dans le fichier appelé « phase2.csv »
-with open('phase2.csv', 'w') as fichier_csv:  # ", f_csv): au lieu de "as f_csv):" pour mise en attente !!!
-    # Créer un objet writer (écriture) avec ce fichier
-    writer_2 = csv.writer(fichier_csv, delimiter=',')
-    writer_2.writerow(infos_liens_cat)
-# Parcourir les infos du livre - zip permet d'itérer sur deux listes ou plus à la fois
-    for page_livre in zip(categories_names_2, liens_fin_url_cplt):
-    # Créer une nouvelle ligne avec les infos à ce moment de la boucle
-        ligne_2 = [categories_names_2, liens_fin_url_cplt]
-
-    writer_2.writerow(ligne_2)
-"""
-
-    
-
-# Categories avec Guillaume
-def get_categories():
-    main_html = html_parser(url_site)
-    content = main_html.find('ul', class_='nav-list')
-    get_links = content.findAll('a')
-    liens = []
-    categories_names = []
-    for link in get_links:
-      if 'http' not in link:
-         url_complete = '{}{}'.format(url_site, link['href'])
-         categorie_name = link.text.strip()
-         liens.append(url_complete)
-         categories_names.append(categorie_name)
-    liens.pop(0)
-    categories_names.pop(0)
-    return liens, categories_names
-
-
-def get_all_books_links():
-    categories_url, categories_names = get_categories()
-    for categories_url in categories_url:
-        links = get_links_categorie()
-
-
-def get_links_categorie(categorie_url):
+def get_categories(categorie_url):
     main_html = html_parser(categorie_url)
     content = main_html.find('ul', class_='nav-list')
-    get_links = content.findAll('a')# All ou _all???? voir
-    # stack car depuis 2016 'findAll' has been renamed to 'find_all'. Link to official documentation
-
-
-    liens = []
+    get_links = content.findAll('a')
+    liens_c = []
     for link in get_links:
-      if 'http' not in link:
-         url_complete = '{}{}'.format(url_site, link['href'])
-         liens.append(url_complete)
-    return liens
+        if 'http' not in link:
+            url_complete = '{}{}'.format(url_site, link['href'])
+            liens_c.append(url_complete)
+    liens_c.pop(0)
+    return liens_c
 
 
-content = get_produit_url()
-infos = get_produit_code_prix_stock()
-titre = get_titre()
-content_p = get_description_produit()
-catego = get_categorie()
-p = get_nb_etoiles()
-image_url_cplt = get_image_url()
-infos_livre = {
-    'product_page_url': content,
-    'universal_product_code(upc)': infos['UPC'],
-    'title': titre,
-    'price_including_tax': infos['Price (incl. tax)'],
-    'price_excluding_tax': infos['Price (excl. tax)'],
-    'number_available': infos['Availability'],  # list replace "(" pour laisser uniquement "14"
-    'product_description': content_p,
-    'category': catego,
-    'review_rating': p,  # mettre 1 au lieu de One
-    'image_url': image_url_cplt
-}
-#tableau = pd.DataFrame(infos_livre)
-
-pd_infos_livre = pd.Series(infos_livre, index=["product_page_url", "universal_ product_code (upc)", "title", "price_including_tax", 
-                                               "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"])
+def get_categories_names(categorie_url):
+    main_html = html_parser(categorie_url)
+    content = main_html.find('ul', class_='nav-list')
+    get_links = content.findAll('a')
+    categories_names = []
+    for link in get_links:
+        if 'http' not in link:
+            categorie_name = link.text.strip()
+            categories_names.append(categorie_name)
+    categories_names.pop(0)
+    return categories_names
 
 
-"""
-# On prend tout le texte dans un fichier csv
-# Créer une liste pour les en-têtes
-en_tete = ["product_page_url", "universal_ product_code (upc)", "title", "price_including_tax",
-           "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
-# Créer un nouveau fichier pour écrire dans le fichier appelé « phase1.csv »
-with open('phase1.csv', 'w') as fichier_csv:
-    # Créer un objet writer (écriture) avec ce fichier
-    writer = csv.writer(fichier_csv, delimiter=',')
-    writer.writerow(en_tete)
-    # Parcourir les infos du livre - zip permet d'itérer sur deux listes ou plus à la fois
-    for infos_livre in zip(content, infos['UPC'], titre, infos['Price (incl. tax)'], infos['Price (excl. tax)'], 
-                           infos['Availability'], content_p, catego, p, image_url_cplt):
-        # Créer une nouvelle ligne avec les infos à ce moment de la boucle
-                ligne = [content, infos['UPC'], titre, infos['Price (incl. tax)'], infos['Price (excl. tax)'],
-                         infos['Availability'], content_p, catego, p, image_url_cplt]
-                
-    writer.writerow(ligne)
-"""
+def get_images_url(images):
+    start_time = time.perf_counter()
+    for image in images:
+        soup = html_parser(image)
+        image = soup.find('img', {})
+        img_url = image.get('src').replace('../../', '')
+        url_complete = url_site + img_url
+        img_name = str(img_url.split('/')[-1])
+        print(img_name)
+        # Téléchargement des images - import urllib.request & import os
+        print("downloading {}".format(img_url))
+        urllib.request.urlretrieve(url_complete,
+                                   os.path.join("\\Users\olivier\PycharmProjects\projects\Scraper", img_name))
+
+    elapsed_time = time.perf_counter() - start_time
+    elapsed_time_min = int(elapsed_time / 60)
+    print(f"The whole process took {elapsed_time_min} minutes "
+          f"and {round(elapsed_time - (60 * elapsed_time_min), 2)} seconds.")
+
+
+def get_data_to_csv(categories_names):
+    start_time = time.perf_counter()
+
+    for category in categories_names:
+        # Ouverture du fichier des 1000 livres
+        infos_livres = pd.read_csv("test_cat_livres_ok1012.csv")
+        filtre1 = infos_livres["category"].isin([category])  # Filtre par selection d'une catégorie
+        print(infos_livres[filtre1])
+        infos_livres[filtre1].to_csv(fr'{category}.csv', index=False, header=True)  # Sauvegarde
+        time.sleep(1)
+
+    elapsed_time = time.perf_counter() - start_time
+    elapsed_time_min = int(elapsed_time / 60)
+    print(f"The whole process took {elapsed_time_min} minutes "
+          f"and {round(elapsed_time - (60 * elapsed_time_min), 2)} seconds.")
 
 
 if __name__ == "__main__":
-    cts_urls, cts_names = get_categories()
-    for cts_url in cts_urls:
-        print(cts_url)
+
+    scraper_livre_phase1(url_livre)
+
+    # naviguer_et_scraper_phase2()
+
+    # naviguer_et_scraper_phase3()
+
+    # liens_all = get_links_categories(url_site, page_number=1)
+    # get_images_url(liens_all)
+
+
