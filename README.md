@@ -37,7 +37,7 @@ Dupplication du dépôt distant en local depuis le terminal ou l'invite de comma
 
 Création de l'environnement virtuel "venv" : \
 utilisez la commande `python -m venv <nom environnement>` dans ce cas, \
-"env" sera par convention, le nom environnement, soit `python -m venv env` \
+"env" sera par convention, le nom environnement, soit `python -m venv env` 
 
 Activation de l'environnement virtuel "env" : \
 exécutez `env/Scripts/activate.bat` \
@@ -46,9 +46,12 @@ exécutez `env/Scripts/activate.bat` \
 Installation des packages avec pip : \
 `pip install -r requirements.txt`
 
-Lancer le script : \
+Lancez le script : \
 `python main.py` sous Unix \
-`py main.py` sous Windows 
+`py main.py` sous Windows \
+Si votre interpreteur est invalide pour le projet : 
+`rm -rf env` pour supprimer les données de l'environnement virtuel \
+Créez et activez depuis l'interface graphique de votre IDE python
 
 ***Rappel : Le script ne doit retourner aucune erreur à la fin de son éxécution. \
 La bonne éxécution du script, ainsi que l'intégrité des données récupérées, \
