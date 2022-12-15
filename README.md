@@ -56,3 +56,27 @@ Créez et activez depuis l'interface graphique de votre IDE python
 ***Rappel : Le script ne doit retourner aucune erreur à la fin de son éxécution. \
 La bonne éxécution du script, ainsi que l'intégrité des données récupérées, \
 dépendront de la stabilité de votre connexion internet.*** 
+
+### Utilisation
+
+Décommenter la fonction que vous souhaitez éxécuter
+
+1 - Permet de lancer la récupération d'un livre avec export csv : 
+- scraper_livre_phase1(url_livre)
+
+2 - Permet de lancer la récupération des livres d'une catégorie avec export csv : 
+- naviguer_et_scraper_phase2()
+
+3 - Permet de lancer la récupération de tous livres avec export csv par catégories : 
+- naviguer_et_scraper_phase3()
+
+4 - Permet de lancer la récupération de toutes les images du site 
+- liens_all = get_links_categories(url_site, page_number=1) \
+get_images_url(liens_all)
+
+###Données attendues :
+- Un dossier "data" sera créé avec les sous répertoires "csv" et "images"
+- 1 fichier csv d'un livre 
+- 1 fichier csv de livres d'une catégorie
+- 50 fichiers csv contenant les informations des livres par catégories 
+- 1000 fichiers jpg de tous les livre du site
