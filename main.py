@@ -22,9 +22,17 @@ def html_parser(url):
 
 
 def scraper_livre_phase1(url):
+    # Création des dossiers et sous dossiers pour les exports
+    dossiers = ['data', "data/csv", "data/images"]
+    for dossier in dossiers:
+        if not os.path.exists(dossier):
+            os.mkdir(dossier)
+    nom = "livre_ph1"
+    filename = 'data/csv/%s.csv' % nom
     # Export csv
-    with open("livre_ph1.csv", 'w', encoding='utf8', newline='') as fopen:
+    with open(filename, 'w', encoding='utf8', newline='') as fopen:
         writer = csv.writer(fopen, delimiter=',')
+
         en_tete = ["product_page_url", "universal_product_code", "title", "price_including_tax",
                    "price_excluding_tax", "number_available", "product_description", "category", "review_rating",
                    "image_url"]
@@ -71,6 +79,7 @@ def scraper_livre_phase1(url):
                  "category": categorie,
                  "review_rating": nb_etoiles,
                  "image_url": couv_url}
+
         info = [info_url, code_upc, titre_s, prix_ttc, prix_ht,
                 stock, descr_prod, categorie, nb_etoiles, couv_url]
         writer.writerow(info)
@@ -82,7 +91,13 @@ def naviguer_et_scraper_phase2():
     continue_categorie_scraping, liens_cat = get_links_categorie(url_categorie, page_number=page_number)
     start_time = time.perf_counter()
 
-    with open("livres_ph2.csv", 'w', encoding='utf8', newline='') as fopen:
+    dossiers = ['data', "data/csv", "data/images"]
+    for dossier in dossiers:
+        if not os.path.exists(dossier):
+            os.mkdir(dossier)
+    nom = "livres_ph2"
+    filename = 'data/csv/%s.csv' % nom
+    with open(filename, 'w', encoding='utf8', newline='') as fopen:
         writer = csv.writer(fopen, delimiter=',')
         en_tete = ["product_page_url", "universal_product_code", "title", "price_including_tax",
                    "price_excluding_tax", "number_available", "product_description", "category", "review_rating",
@@ -148,39 +163,58 @@ def naviguer_et_scraper_phase3():
     page_number = 1
     start_time = time.perf_counter()
 
-    get_links_categories(url_site, page_number=1)
-    for lien in liens_all:
-        source_url = url_site
-        html_text = requests.get(lien).text
-        soup = bs(html_text, "html.parser")
-        titre = soup.find("div", class_="col-sm-6 product_main")
-        titre_s = titre.find("h1").text.encode("ascii", "ignore").decode("ascii")
-        print(titre_s)
-        print(f'Livre : {titre_s:.^60}')
-        info_url = lien
-        print(f'product_page_url : {info_url}')
-        infos = get_produit_code_prix_stock(lien)
-        code_upc = infos[0]
-        print(f'universal_ product_code (upc) : {code_upc}')
-        print(f'title : {titre_s}')
-        prix_ttc = infos[1]
-        print(f'price_including_tax : {prix_ttc}')
-        prix_ht = infos[2]
-        print(f'price_excluding_tax : {prix_ht}')
-        stock = infos[3]
-        print(f'number_available : {stock}')
-        descr_prod = get_description_produit(lien)
-        print(f'product_description : {descr_prod}')
-        categorie = get_categorie(lien)
-        print(f'category : {categorie}')
-        nb_etoiles = soup.find("p", class_="star-rating")["class"][1]
-        print(f'review_rating : {nb_etoiles}')
-        couv_url_b = soup.find("div", class_="item active")
-        couv_url = source_url + couv_url_b.img["src"].replace("../../", "")
-        print(f'image_url : {couv_url}')
-        time.sleep(1)
-        text = "Livre suivant !"
-        print(f' {text:.>60} \n')
+    with open("infos_livres.csv", 'w', encoding='utf8', newline='') as fopen:  # Ouvre le fichier csv
+        writer = csv.writer(fopen, delimiter=',')
+        en_tete = ["product_page_url", "universal_product_code", "title", "price_including_tax",
+                   "price_excluding_tax", "number_available", "product_description", "category", "review_rating",
+                   "image_url"]
+        writer.writerow(en_tete)
+        get_links_categories(url_site, page_number=1)
+        for lien in liens_all:
+            source_url = url_site
+            html_text = requests.get(lien).text
+            soup = bs(html_text, "html.parser")
+            titre = soup.find("div", class_="col-sm-6 product_main")
+            titre_s = titre.find("h1").text.encode("ascii", "ignore").decode("ascii")
+            print(titre_s)
+            print(f'Livre : {titre_s:.^60}')
+            info_url = lien
+            print(f'product_page_url : {info_url}')
+            infos = get_produit_code_prix_stock(lien)
+            code_upc = infos[0]
+            print(f'universal_ product_code (upc) : {code_upc}')
+            print(f'title : {titre_s}')
+            prix_ttc = infos[1]
+            print(f'price_including_tax : {prix_ttc}')
+            prix_ht = infos[2]
+            print(f'price_excluding_tax : {prix_ht}')
+            stock = infos[3]
+            print(f'number_available : {stock}')
+            descr_prod = get_description_produit(lien)
+            print(f'product_description : {descr_prod}')
+            categorie = get_categorie(lien)
+            print(f'category : {categorie}')
+            nb_etoiles = soup.find("p", class_="star-rating")["class"][1]
+            print(f'review_rating : {nb_etoiles}')
+            couv_url_b = soup.find("div", class_="item active")
+            couv_url = source_url + couv_url_b.img["src"].replace("../../", "")
+            print(f'image_url : {couv_url}')
+            time.sleep(1)
+            text = "Livre suivant !"
+            print(f' {text:.>60} \n')
+            livres = {"product_page_url": info_url,
+                      "universal_product_code": code_upc,
+                      "title": titre_s,
+                      "price_including_tax": prix_ttc,
+                      "price_excluding_tax": prix_ht,
+                      "number_available": stock,
+                      "product_description": descr_prod,
+                      "category": categorie,
+                      "review_rating": nb_etoiles,
+                      "image_url": couv_url}
+            info = [info_url, code_upc, titre_s, prix_ttc, prix_ht,
+                    stock, descr_prod, categorie, nb_etoiles, couv_url]
+            writer.writerow(info)
 
     categories_names = get_categories_names(url_site)
     get_data_to_csv(categories_names)
@@ -363,6 +397,12 @@ def get_categories_names(categorie_url):
 
 def get_images_url(images):
     start_time = time.perf_counter()
+
+    dossiers = ['data', "data/csv", "data/images"]
+    for dossier in dossiers:
+        if not os.path.exists(dossier):
+            os.mkdir(dossier)
+
     for image in images:
         soup = html_parser(image)
         image = soup.find('img', {})
@@ -373,7 +413,8 @@ def get_images_url(images):
         # Téléchargement des images - import urllib.request & import os
         print("downloading {}".format(img_url))
         urllib.request.urlretrieve(url_complete,
-                                   os.path.join("\\Users\olivier\PycharmProjects\projects\Scraper", img_name))
+                                   os.path.join("\\Users\olivier\PycharmProjects\projects\Scraper\data\images",
+                                                img_name))
 
     elapsed_time = time.perf_counter() - start_time
     elapsed_time_min = int(elapsed_time / 60)
@@ -386,10 +427,12 @@ def get_data_to_csv(categories_names):
 
     for category in categories_names:
         # Ouverture du fichier des 1000 livres
-        infos_livres = pd.read_csv("test_cat_livres_ok1012.csv")
+        infos_livres = pd.read_csv("infos_livres.csv")
         filtre1 = infos_livres["category"].isin([category])  # Filtre par selection d'une catégorie
         print(infos_livres[filtre1])
-        infos_livres[filtre1].to_csv(fr'{category}.csv', index=False, header=True)  # Sauvegarde
+        os.makedirs('data/csv/livres', exist_ok=True)
+        infos_livres[filtre1].to_csv(fr'data/csv/livres/{category}.csv',
+                                     index=False, header=True)  # Sauvegarde
         time.sleep(1)
 
     elapsed_time = time.perf_counter() - start_time
@@ -408,5 +451,3 @@ if __name__ == "__main__":
 
     # liens_all = get_links_categories(url_site, page_number=1)
     # get_images_url(liens_all)
-
-
