@@ -76,7 +76,7 @@ get_images_url(liens_all)
 
 ###Données attendues :
 - Un dossier "data" sera créé avec les sous répertoires "csv" et "images"
-- 1 fichier csv d'un livre 
+- 1 fichier csv d'un livre
 - 1 fichier csv de livres d'une catégorie
 - 50 fichiers csv contenant les informations des livres par catégories 
 - 1000 fichiers jpg de tous les livre du site
