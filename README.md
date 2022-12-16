@@ -20,19 +20,19 @@ Un script Python permettant de récupérer les données ci-dessous au moment de 
 ### Installation
 
 Prérequis :
-- Une version de Python v3.10 sera nécéssaire afin de pouvoir utiliser le script.
+- Une version de Python v3.10 sera nécessaire afin de pouvoir utiliser le script.
 - Un environnement virtuel venv
 - Une version de Git v2.38
 
 Depuis votre terminal ou Git Bash utilisez la commande : \
-`python -V` afin de connaitre la version installée sur votre système \
+`python -V` afin de connaître la version installée sur votre système \
 `python -m venv --help` afin de vérifier que vous disposer du module venv \
 sinon vous pouvez le télécharger sur https://www.python.org/downloads/ \
 `git --version` : pour vérifier la version de git installée sur votre système \
 sinon vous pouvez la télécharger sur https://git-scm.com/downloads/ \
 ***Rappel : les commandes ci-dessus ne sont valables qu'avec le module venv*** 
 
-Dupplication du dépôt distant en local depuis le terminal ou l'invite de commande : \
+Duplication du dépôt distant en local depuis le terminal ou l'invite de commande : \
 `git clone https://github.com/Olivier91972/Scraper.git` 
 
 Création de l'environnement virtuel "venv" : \
@@ -49,17 +49,17 @@ Installation des packages avec pip : \
 Lancez le script : \
 `python main.py` sous Unix \
 `py main.py` sous Windows \
-Si votre interpreteur est invalide pour le projet : 
+Si votre interpréteur est invalide pour le projet : 
 `rm -rf env` pour supprimer les données de l'environnement virtuel \
 Créez et activez depuis l'interface graphique de votre IDE python
 
-***Rappel : Le script ne doit retourner aucune erreur à la fin de son éxécution. \
-La bonne éxécution du script, ainsi que l'intégrité des données récupérées, \
+***Rappel : Le script ne doit retourner aucune erreur à la fin de son exécution. \
+La bonne exécution du script, ainsi que l'intégrité des données récupérées, \
 dépendront de la stabilité de votre connexion internet.*** 
 
 ### Utilisation
 
-Décommenter la fonction que vous souhaitez éxécuter
+Dé commenter la fonction que vous souhaitez exécuter
 
 1 - Permet de lancer la récupération d'un livre avec export csv : 
 - scraper_livre_phase1(url_livre)
