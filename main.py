@@ -1,9 +1,7 @@
 import requests
 from bs4 import BeautifulSoup as bs
 import csv
-import pandas as pd
 import time
-import re
 import os
 import urllib.request
 
@@ -176,29 +174,29 @@ def naviguer_et_scraper_phase3():
             soup = bs(html_text, "html.parser")
             titre = soup.find("div", class_="col-sm-6 product_main")
             titre_s = titre.find("h1").text.encode("ascii", "ignore").decode("ascii")
-            print(titre_s)
+            #print(titre_s)
             print(f'Livre : {titre_s:.^60}')
             info_url = lien
-            print(f'product_page_url : {info_url}')
+            #print(f'product_page_url : {info_url}')
             infos = get_produit_code_prix_stock(lien)
             code_upc = infos[0]
-            print(f'universal_ product_code (upc) : {code_upc}')
-            print(f'title : {titre_s}')
+            #print(f'universal_ product_code (upc) : {code_upc}')
+            #print(f'title : {titre_s}')
             prix_ttc = infos[1]
-            print(f'price_including_tax : {prix_ttc}')
+            #print(f'price_including_tax : {prix_ttc}')
             prix_ht = infos[2]
-            print(f'price_excluding_tax : {prix_ht}')
+            #print(f'price_excluding_tax : {prix_ht}')
             stock = infos[3]
-            print(f'number_available : {stock}')
+            #print(f'number_available : {stock}')
             descr_prod = get_description_produit(lien)
-            print(f'product_description : {descr_prod}')
+            #print(f'product_description : {descr_prod}')
             categorie = get_categorie(lien)
-            print(f'category : {categorie}')
+            #print(f'category : {categorie}')
             nb_etoiles = soup.find("p", class_="star-rating")["class"][1]
-            print(f'review_rating : {nb_etoiles}')
+            #print(f'review_rating : {nb_etoiles}')
             couv_url_b = soup.find("div", class_="item active")
             couv_url = source_url + couv_url_b.img["src"].replace("../../", "")
-            print(f'image_url : {couv_url}')
+            #print(f'image_url : {couv_url}')
             time.sleep(1)
             text = "Livre suivant !"
             print(f' {text:.>60} \n')
@@ -239,7 +237,7 @@ def get_links_categorie(categorie_url, page_number):
         soup = bs(html_text, "html.parser")
         content = soup.find('ol', class_='row')
         liens = []
-        print(f"check bouton next - {form_url}")
+        #print(f"check bouton next - {form_url}")
         get_links = content.findAll('a')
         url_complete = {}
 
@@ -249,18 +247,18 @@ def get_links_categorie(categorie_url, page_number):
             liens.append(url_complete)
         # gestion des doublons dans la liste
         liens_cat = list(set(liens))
-        print(liens_cat)
+        #print(liens_cat)
         # Ajout des liens obtenus dans un conteneur global
         liens_all.extend(liens_cat)
-        print(liens_all)
-        print(len(liens_all))
+        #print(liens_all)
+        #print(len(liens_all))
 
         nb_liens_page = len(liens_cat)
-        print(nb_liens_page)
+        #print(nb_liens_page)
         time.sleep(1)
 
         if nb_liens_page >= 20:  # ou détection du bouton next
-            print("on doit aller à la page suivante !")
+            #print("on doit aller à la page suivante !")
             page_number += 1
             get_links_categorie(categorie_url, page_number)
 
@@ -280,7 +278,7 @@ def get_links_categories(categorie_url, page_number):
         url_reduite = categorie_url[:-10] + "page-{}.html"
         form_url = url_reduite.format(str(page_number))
         r = requests.get(form_url)
-        print(r)
+        #print(r)
 
         if r.status_code == 200:
             html_text = requests.get(form_url).text
@@ -299,11 +297,11 @@ def get_links_categories(categorie_url, page_number):
             liens_cat = list(set(liens))
             liens_all.extend(liens_cat)
             nb_liens_page = len(liens_cat)
-            print(nb_liens_page)
+            #print(nb_liens_page)
             time.sleep(1)
 
             if nb_liens_page >= 20:
-                print("page suivante car nb liens max !")
+                #print("page suivante car nb liens max !")
                 page_number += 1
 
                 get_links_categorie(categorie_url, page_number)
@@ -312,7 +310,7 @@ def get_links_categories(categorie_url, page_number):
                 pass
 
         elif r.status_code == 404:
-            print("On récupére les liens de la page index")
+            #print("Récupération des liens de la page index")
             form_url = form_url[:-11]
             html_text = requests.get(form_url).text
             soup = bs(html_text, "html.parser")
@@ -329,11 +327,11 @@ def get_links_categories(categorie_url, page_number):
             liens_cat = list(set(liens))
             liens_all.extend(liens_cat)
             print(len(liens_all))
-            print("Lien suivant")
+            #print("Lien suivant")
         else:
             return False
         page_number = 1
-        print("on continue !")
+        #print("on continue !")
         time.sleep(1)
     return liens_all
 
@@ -424,16 +422,26 @@ def get_images_url(images):
 
 def get_data_to_csv(categories_names):
     start_time = time.perf_counter()
-
-    for category in categories_names:
-        # Ouverture du fichier des 1000 livres
-        infos_livres = pd.read_csv("infos_livres.csv")
-        filtre1 = infos_livres["category"].isin([category])  # Filtre par selection d'une catégorie
-        print(infos_livres[filtre1])
-        os.makedirs('data/csv/livres', exist_ok=True)
-        infos_livres[filtre1].to_csv(fr'data/csv/livres/{category}.csv',
-                                     index=False, header=True)  # Sauvegarde
-        time.sleep(1)
+    for cat_name in categories_names:
+        dico = {}
+        filename_r = "infos_livres.csv"
+        filename_w = fr'data/csv/livres/%s.csv' % cat_name
+        en_tete = ["product_page_url", "universal_product_code", "title", "price_including_tax",
+                   "price_excluding_tax", "number_available", "product_description", "category", "review_rating",
+                   "image_url"]
+        with open(filename_r, 'r', encoding='utf8', newline='') as fichier_input:
+            reader = csv.reader(fichier_input, delimiter=',')
+            with open(filename_w, 'w', encoding='utf8', newline='') as fichier_output:
+                writer = csv.writer(fichier_output, delimiter='|')
+                writer.writerow(en_tete)
+                for ligne in reader:
+                    ligne_livre = ligne
+                    print(ligne_livre)
+                    if cat_name in ligne_livre:
+                        dico[ligne_livre[7]] = ligne_livre
+                        fichier_output.write(f'{ligne_livre[0]}|{ligne_livre[1]}|{ligne_livre[2]}|{ligne_livre[3]}|'
+                                             f'{ligne_livre[4]}|{ligne_livre[5]}|{ligne_livre[6]}|{ligne_livre[7]}|'
+                                             f'{ligne_livre[8]}|{ligne_livre[9]}\n')
 
     elapsed_time = time.perf_counter() - start_time
     elapsed_time_min = int(elapsed_time / 60)
@@ -443,11 +451,14 @@ def get_data_to_csv(categories_names):
 
 if __name__ == "__main__":
 
-    scraper_livre_phase1(url_livre)
+    # scraper_livre_phase1(url_livre)
 
     # naviguer_et_scraper_phase2()
 
-    # naviguer_et_scraper_phase3()
+    naviguer_et_scraper_phase3()
 
     # liens_all = get_links_categories(url_site, page_number=1)
     # get_images_url(liens_all)
+
+    #categories_names = get_categories_names(url_site)
+    #get_data_to_csv(categories_names)
