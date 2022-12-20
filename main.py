@@ -460,3 +460,5 @@ if __name__ == "__main__":
     # liens_all = get_links_categories(url_site, page_number=1)
     # get_images_url(liens_all)
 
+    #categories_names = get_categories_names(url_site)
+    #get_data_to_csv(categories_names)
